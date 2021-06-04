@@ -143,7 +143,7 @@ KeyFrame* MapPoint::GetReferenceKeyFrame()
 /**
  * @brief 给地图点添加观测
  *
- * 记录哪些 KeyFrame 的那个特征点能观测到该 地图点
+ * 记录哪些 KeyFrame 的哪个特征点能观测到该 地图点
  * 并增加观测的相机数目nObs，单目+1，双目或者rgbd+2
  * 这个函数是建立关键帧共视关系的核心函数，能共同观测到某些地图点的关键帧是共视关键帧
  * @param pKF KeyFrame
