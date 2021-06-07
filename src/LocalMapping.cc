@@ -209,6 +209,7 @@ void LocalMapping::ProcessNewKeyFrame()
         {
             if(!pMP->isBad())
             {
+                //KeyFrame的地图点还不一定在KeyFrame中？---下面一句回答了：有可能地图点是来自于局部地图点---局部地图点也会添加到KeyFrame中？？？
                 if(!pMP->IsInKeyFrame(mpCurrentKeyFrame))
                 {
                     // 如果地图点不是来自当前帧的观测（比如来自局部地图点），为当前地图点添加观测
