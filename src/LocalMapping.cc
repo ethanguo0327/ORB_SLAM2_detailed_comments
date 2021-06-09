@@ -213,10 +213,11 @@ void LocalMapping::ProcessNewKeyFrame()
                 if(!pMP->IsInKeyFrame(mpCurrentKeyFrame))
                 {
                     // 如果地图点不是来自当前帧的观测（比如来自局部地图点），为当前地图点添加观测
+                    // ???统计谁能观测到它，作用是什么
                     pMP->AddObservation(mpCurrentKeyFrame, i);
                     // 获得该点的平均观测方向和观测距离范围
                     pMP->UpdateNormalAndDepth();
-                    // 更新地图点的最佳描述子
+                    // 更新地图点的最佳描述子---找到最中庸的一个描述子，和谁都差的不远
                     pMP->ComputeDistinctiveDescriptors();
                 }
                 else // this can only happen for new stereo points inserted by the Tracking

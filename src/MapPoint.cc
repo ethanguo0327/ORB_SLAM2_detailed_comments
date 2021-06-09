@@ -359,8 +359,8 @@ float MapPoint::GetFoundRatio()
 /**
  * @brief 计算地图点最具代表性的描述子
  *
- * 由于一个地图点会被许多相机观测到，因此在插入关键帧后，需要判断是否更新代表当前点的描述子 
- * 先获得当前点的所有描述子，然后计算描述子之间的两两距离，最好的描述子与其他描述子应该具有最小的距离中值
+ * 由于一个地图点会被许多相机(求求了，别再说什么相机了，应该说是“帧”！！！)观测到，因此在插入关键帧后，需要判断是否更新代表当前点的描述子 
+ * 先获得当前点的所有描述子，然后计算描述子之间的两两距离，最好的描述子与其他描述子应该具有最小的距离中值---人群中最中庸最圆滑的那个人，不极端，谁都能聊得来，这种人确实适合当代表，啥都能聊两句
  */
 void MapPoint::ComputeDistinctiveDescriptors()
 {
@@ -402,7 +402,7 @@ void MapPoint::ComputeDistinctiveDescriptors()
     // N表示为一共多少个描述子
     const size_t N = vDescriptors.size();
 	
-    // 将Distances表述成一个对称的矩阵
+    // 将Distances表述成一个对称的矩阵---这样的话，第i行的所有元素就是第i个描述子和其他所有描述子的距离
     // float Distances[N][N];
 	std::vector<std::vector<float> > Distances;
 	Distances.resize(N, vector<float>(N, 0));
@@ -412,7 +412,8 @@ void MapPoint::ComputeDistinctiveDescriptors()
         Distances[i][i]=0;
         // 计算并记录不同描述子距离
         for(size_t j=i+1;j<N;j++)
-        {
+        {   
+            //TODO
             int distij = ORBmatcher::DescriptorDistance(vDescriptors[i],vDescriptors[j]);
             Distances[i][j]=distij;
             Distances[j][i]=distij;
@@ -502,6 +503,7 @@ void MapPoint::UpdateNormalAndDepth()
             return;
 
         observations=mObservations; // 获得观测到该地图点的所有关键帧
+        //???
         pRefKF=mpRefKF;             // 观测到该点的参考关键帧（第一次创建时的关键帧）
         Pos = mWorldPos.clone();    // 地图点在世界坐标系中的位置
     }
@@ -526,6 +528,7 @@ void MapPoint::UpdateNormalAndDepth()
 
     cv::Mat PC = Pos - pRefKF->GetCameraCenter();                           // 参考关键帧相机指向地图点的向量（在世界坐标系下的表示）
     const float dist = cv::norm(PC);                                        // 该点到参考关键帧相机的距离
+    // ???
     const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;        // 观测到该地图点的当前帧的特征点在金字塔的第几层
     const float levelScaleFactor =  pRefKF->mvScaleFactors[level];          // 当前金字塔层对应的尺度因子，scale^n，scale=1.2，n为层数
     const int nLevels = pRefKF->mnScaleLevels;                              // 金字塔总层数，默认为8
