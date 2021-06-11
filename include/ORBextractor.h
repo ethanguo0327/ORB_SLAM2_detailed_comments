@@ -199,7 +199,7 @@ protected:
      */
     void ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint> >& allKeypoints);
 
-    //NOTE 作者不地道啊，这里是类的成员变量，说好的变量名的m前缀呢？
+    //NOTE 作者不地道啊，这里是类的成员变量，说好的变量名的m前缀呢？-----确实
 
     std::vector<cv::Point> pattern;             ///<用于计算描述子的随机采样点集合
 

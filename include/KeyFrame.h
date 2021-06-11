@@ -394,6 +394,7 @@ protected:
     // SE3 Pose and camera center
     cv::Mat Tcw;    // 当前相机的位姿，世界坐标系到相机坐标系
     cv::Mat Twc;    // 当前相机位姿的逆
+    //和前者的区别？？？
     cv::Mat Ow;     // 相机光心(左目)在世界坐标系下的坐标,这里和普通帧中的定义是一样的
 
     cv::Mat Cw; ///< Stereo middel point. Only for visualization

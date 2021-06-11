@@ -530,8 +530,8 @@ ORBextractor::ORBextractor(int _nfeatures,		//指定要提取的特征点数目
 	//获取用于计算BRIEF描述子的随机采样点点集头指针
 	//注意到pattern0数据类型为Points*,bit_pattern_31_是int[]型，所以这里需要进行强制类型转换
     const Point* pattern0 = (const Point*)bit_pattern_31_;	
-	//使用std::back_inserter的目的是可以快覆盖掉这个容器pattern之前的数据
-	//其实这里的操作就是，将在全局变量区域的、int格式的随机采样点以cv::point格式复制到当前类对象中的成员变量中
+	//其实这里的操作就是，将在全局变量区域的、int格式的bit_pattern_31_中的前256对点（一个点是两个int）以cv::point格式复制到当前类对象中的成员变量pattern中
+    //https://blog.csdn.net/github_35681219/article/details/52564780  ---std::back_inserter
     std::copy(pattern0, pattern0 + npoints, std::back_inserter(pattern));
 
     //This is for orientation
@@ -541,30 +541,48 @@ ORBextractor::ORBextractor(int _nfeatures,		//指定要提取的特征点数目
 	//+1中的1表示那个圆的中间行
     umax.resize(HALF_PATCH_SIZE + 1);
 	
-	//cvFloor返回不大于参数的最大整数值，cvCeil返回不小于参数的最小整数值，cvRound则是四舍五入
-    int v,		//循环辅助变量
-		v0,		//辅助变量
-		vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);	//计算圆的最大行号，+1应该是把中间行也给考虑进去了
-				//NOTICE 注意这里的最大行号指的是计算的时候的最大行号，此行的和圆的角点在45°圆心角的一边上，之所以这样选择
-				//是因为圆周上的对称特性
+	//cvFloor向下取整，cvCeil向上取整，cvRound则是四舍五入
+    int v,		
+		v0,		
+        // cvFloor(10.6+1) = 11
+		vmax = cvFloor(HALF_PATCH_SIZE * sqrt(2.f) / 2 + 1);
 				
-	//这里的二分之根2就是对应那个45°圆心角
-    
+	//cvCeil(10.6) = 11
     int vmin = cvCeil(HALF_PATCH_SIZE * sqrt(2.f) / 2);
 	//半径的平方
     const double hp2 = HALF_PATCH_SIZE*HALF_PATCH_SIZE;
 
 	//利用圆的方程计算每行像素的u坐标边界（max）
+    //[0,11]
     for (v = 0; v <= vmax; ++v)
-        umax[v] = cvRound(sqrt(hp2 - v * v));		//结果都是大于0的结果，表示x坐标在这一行的边界
+    //每一行的横坐标边界值(umax)
+        //cvRound(sqrt(225-0)) =15;
+        //cvRound(sqrt(225-1)) =15;五入
+        //cvRound(sqrt(225-4)) =15;五入
+        //cvRound(sqrt(225-9)) =15;五入
+        //cvRound(sqrt(225-16))=14;四舍
+        //cvRound(sqrt(225-25))=14;四舍
+        //cvRound(sqrt(225-36))=14;五入
+        //cvRound(sqrt(225-49))=13;四舍
+        //cvRound(sqrt(225-64))=13;五入
+        //cvRound(sqrt(225-81))=12;
+        //cvRound(sqrt(225-100))=11;四舍
+        //cvRound(sqrt(225-121))=10;四舍
+    //可以看到，下面八分之一个圆的横轴边界之间的跨步是很小的（虽然越往上越大了）
+        umax[v] = cvRound(sqrt(hp2 - v * v));
 
     // Make sure we are symmetric
-	//这里其实是使用了对称的方式计算上四分之一的圆周上的umax，目的也是为了保持严格的对称（如果按照常规的想法做，由于cvRound就会很容易出现不对称的情况，
-	//同时这些随机采样的特征点集也不能够满足旋转之后的采样不变性了）
+    //如果还按照上面的方法计算vmin到HALF_PATCH_SIZE之间的行边界，那么有：
+    //cvRound(sqrt(225-144))=9;
+    //cvRound(sqrt(225-169))=7;四舍
+    //cvRound(sqrt(225-196))=5;四舍
+    //cvRound(sqrt(225-255))=0;
+    //可以看到，上面八分之一个圆的横轴边界（umax）之间跨度很大，导致很稀疏，这样就会导致在...???...的时候失去了对称性
 	for (v = HALF_PATCH_SIZE, v0 = 0; v >= vmin; --v)
     {
         while (umax[v0] == umax[v0 + 1])
             ++v0;
+
         umax[v] = v0;
         ++v0;
     }
@@ -1042,7 +1060,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
 	//重新调整图像层数
     allKeypoints.resize(nlevels);
 
-	//图像cell的尺寸，是个正方形，可以理解为边长in像素坐标
+	//在图像中划分网格，这是网格的宽度（单位：格）
     const float W = 30;
 
     // 对每一层图像做处理
@@ -1058,6 +1076,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
 		//存储需要进行平均分配的特征点
         vector<cv::KeyPoint> vToDistributeKeys;
 		//一般地都是过量采集，所以这里预分配的空间大小是nfeatures*10
+        //reserve的作用：push_back时如果vector所在的这块内存片段不够大了，还得重新找一块大点的地方，把数据拷贝过来。reserve就是提前分配好空间，省的不够再找。
         vToDistributeKeys.reserve(nfeatures*10);
 
 		//计算进行特征点提取的图像区域尺寸
@@ -1664,11 +1683,12 @@ void ORBextractor::ComputePyramid(cv::Mat image)
 		//计算本层图像的像素尺寸大小
         Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
 		//全尺寸图像。包括无效图像区域的大小。将图像进行“补边”，EDGE_THRESHOLD区域外的图像不进行FAST角点检测
+        //补边用于检测边缘的部分
         Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
-		// 定义了两个变量：temp是扩展了边界的图像，masktemp并未使用
+		// 定义了两个变量：temp是扩展了边界的图像，但里面没东西
         Mat temp(wholeSize, image.type()), masktemp;
         // mvImagePyramid 刚开始时是个空的vector<Mat>
-		// 把图像金字塔该图层的图像指针mvImagePyramid指向temp的中间部分（这里为浅拷贝，内存相同）
+		// 把图像金字塔该图层的图像指针mvImagePyramid指向temp除黑边以外的图像部分（这里为浅拷贝，内存相同）
         mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
 
         // Compute the resized image
@@ -1715,6 +1735,7 @@ void ORBextractor::ComputePyramid(cv::Mat image)
         else
         {
 			//对于第0层未缩放图像，直接将图像深拷贝到temp的中间，并且对其周围进行边界扩展。此时temp就是对原图扩展后的图像
+            //copyMakeBorder:https://blog.csdn.net/qq_22764813/article/details/52787553
             copyMakeBorder(image,			//这里是原图像
 						   temp, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
                            BORDER_REFLECT_101);            

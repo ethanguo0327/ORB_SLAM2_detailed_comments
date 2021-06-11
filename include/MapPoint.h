@@ -283,6 +283,7 @@ protected:
 
     // Keyframes observing the point and associated index in keyframe
     // 观测到该MapPoint的KF和该MapPoint在KF中的索引
+    // 哪个男人看到了俺的身子，俺是他第几个女人
     std::map<KeyFrame*,size_t> mObservations; 
 
     // Mean viewing direction
