@@ -718,7 +718,7 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
 	//存储有提取器节点的链表
     list<ExtractorNode> lNodes;
 
-	//存储初始提取器节点指针的vector
+	//存储初始提取器节点指针的vector,也是1个或2个呗？
     vector<ExtractorNode*> vpIniNodes;
 
 	//重新设置其大小
@@ -737,12 +737,13 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
 		ni.BL = cv::Point2i(ni.UL.x,maxY-minY);		        //BottomLeft
         ni.BR = cv::Point2i(ni.UR.x,maxY-minY);             //BottomRight
 
-		//重设vkeys大小
+		//当前节点的特征点的个数
+        //初始节点不管有几个，都保存初始个数个特征点？？？
         ni.vKeys.reserve(vToDistributeKeys.size());
 
 		//将刚才生成的提取节点添加到链表中
 		//虽然这里的ni是局部变量，但是由于这里的push_back()是拷贝参数的内容到一个新的对象中然后再添加到列表中
-		//所以当本函数退出之后这里的内存不会成为“野指针”
+		//所以当本函数退出之后这里的内存不会成为“野指针”----------原是啊，push_back的是变量又不是指针
         lNodes.push_back(ni);
 		//存储这个初始的提取器节点句柄
         vpIniNodes[i] = &lNodes.back();
@@ -773,7 +774,7 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
         }
         ///如果一个提取器节点没有被分配到特征点，那么就从列表中直接删除它
         else if(lit->vKeys.empty())
-            //注意，由于是直接删除了它，所以这里的迭代器没有必要更新；否则反而会造成跳过元素的情况
+            //注意，由于是直接删除了它，所以这里的迭代器没有必要更新；否则反而会造成跳过元素的情况-------什么鬼啊，erase返回的本身就是下一个迭代器啊
             lit = lNodes.erase(lit);			
         else
 			//如果上面的这些情况和当前的特征点提取器节点无关，那么就只是更新迭代器 
@@ -1060,7 +1061,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
 	//重新调整图像层数
     allKeypoints.resize(nlevels);
 
-	//在图像中划分网格，这是网格的宽度（单位：格）
+	//在图像中划分网格，这是网格的宽度（单位：pixel）
     const float W = 30;
 
     // 对每一层图像做处理
@@ -1083,7 +1084,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
         const float width = (maxBorderX-minBorderX);
         const float height = (maxBorderY-minBorderY);
 
-		//计算网格在当前层的图像有的行数和列数
+		//计算网格的行数和列数
         const int nCols = width/W;
         const int nRows = height/W;
 		//计算每个图像网格所占的像素行数和列数
@@ -1093,7 +1094,7 @@ void ORBextractor::ComputeKeyPointsOctTree(
 		//开始遍历图像网格，还是以行开始遍历的
         for(int i=0; i<nRows; i++)
         {
-			//计算当前网格初始行坐标
+			//当前网格初始行坐标
             const float iniY =minBorderY+i*hCell;
 			//计算当前网格最大的行坐标，这里的+6=+3+3，即考虑到了多出来3是为了cell边界像素进行FAST特征点提取用
 			//前面的EDGE_THRESHOLD指的应该是提取后的特征点所在的边界，所以minBorderY是考虑了计算半径时候的图像边界

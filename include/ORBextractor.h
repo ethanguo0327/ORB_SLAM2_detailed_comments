@@ -54,7 +54,7 @@ public:
      */
     void DivideNode(ExtractorNode &n1, ExtractorNode &n2, ExtractorNode &n3, ExtractorNode &n4);
 
-	///保存有当前节点的特征点
+	///保存当前节点的特征点
     std::vector<cv::KeyPoint> vKeys;
 	///当前节点所对应的图像坐标边界
     cv::Point2i UL, UR, BL, BR;
