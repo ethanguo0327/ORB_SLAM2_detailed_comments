@@ -170,12 +170,12 @@ static void computeOrbDescriptor(const KeyPoint& kpt, const Mat& img, const Poin
     #define GET_VALUE(idx) center[cvRound(pattern[idx].x*b + pattern[idx].y*a)*step + cvRound(pattern[idx].x*a - pattern[idx].y*b)]        
     
 	//brief描述子由32*8位组成
-	//其中每一位是来自于两个像素点灰度的直接比较，所以每比较出8bit结果，需要16个随机点，这也就是为什么pattern需要+=16的原因
+	//其中每一位是来自于两个像素点灰度的直接比较，所以每比较出8bit结果，需要16个随机点，这就是为什么pattern需要+=16的原因
     for (int i = 0; i < 32; ++i, pattern += 16)
     {
 		
-        int t0, 	//参与比较的第1个特征点的灰度值
-			t1,		//参与比较的第2个特征点的灰度值		
+        int t0, 	//参与比较的第1个点的灰度值
+			t1,		//参与比较的第2个点的灰度值		
 			val;	//描述子这个字节的比较结果，0或1
 		
         t0 = GET_VALUE(0); t1 = GET_VALUE(1);
@@ -815,7 +815,7 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
         vSizeAndPointerToNode.clear();
 
         // 将目前的子区域进行划分
-		//开始遍历列表中所有的提取器节点，并进行分解或者保留
+		//开始遍历【当前层】的提取器节点，并进行分解或者保留。为什么是当前层呢？因为往lNodes中新加的元素都加到前面去了，而lit是++的
         while(lit!=lNodes.end())
         {
 			//如果提取器节点只有一个特征点，
@@ -853,10 +853,8 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
 						//保存这个特征点数目和节点指针的信息
                         vSizeAndPointerToNode.push_back(make_pair(n1.vKeys.size(),&lNodes.front()));
 
-						//?这个访问用的句柄貌似并没有用到？
-                        // lNodes.front().lit 和前面的迭代的lit 不同，只是名字相同而已
-                        // lNodes.front().lit是node结构体里的一个指针用来记录节点的位置
-                        // 迭代的lit 是while循环里作者命名的遍历的指针名称
+                        // list.begin()是 iterator(相当于指针功能)迭代器
+                        // 而list.front() 是指第一个元素变量
                         lNodes.front().lit = lNodes.begin();
                     }
                 }
@@ -943,6 +941,10 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
                 // 对需要划分的节点进行排序，对pair对的第一个元素进行排序，默认是从小到大排序
 				// 优先分裂特征点多的节点，使得特征点密集的区域保留更少的特征点
                 //! 注意这里的排序规则非常重要！会导致每次最后产生的特征点都不一样。建议使用 stable_sort
+                // C++中sort和stable_sort的区别：
+                    // sort是快速排序实现，因此是不稳定的；stable_sort是归并排序实现，因此是稳定的；
+                    // 对于相等的元素sort可能改变顺序，stable_sort保证排序后相等的元素次序不变；
+                    // 如果提供了比较函数，sort不要求比较函数的参数被限定为const，而stable_sort则要求参数被限定为const，否则编译不能通过。
                 sort(vPrevSizeAndPointerToNode.begin(),vPrevSizeAndPointerToNode.end());
 
 				//遍历这个存储了pair对的vector，注意是从后往前遍历
