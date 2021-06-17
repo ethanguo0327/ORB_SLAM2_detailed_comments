@@ -393,7 +393,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
 }
 
 /**
- * @brief 将提取的ORB特征点分配到图像网格中
+ * @brief 将提取的ORB特征点分配到图像网格中（虽然在提取特征点时也有划分网格之说，但是此举的目的是局部性地降采样。特征点分布不均匀的时候全局来讲仍是不均匀的）
  * 
  */
 void Frame::AssignFeaturesToGrid()

@@ -692,7 +692,8 @@ void ExtractorNode::DivideNode(ExtractorNode &n1,
 }
 
 /**
- * @brief 使用四叉树法对一个图像金字塔图层中的特征点进行平均和分发
+ * @brief 使用四叉树法将图像划分成很多个小格子，点越稠密的地方划分的越多。
+ *        等划分的格子达到或者刚刚超过设定的特征点个数时就不再划分。此时可能有的格子里面是有多个特征点的，我们只保留最好的那个特征点就好了。
  * 
  * @param[in] vToDistributeKeys     等待进行分配到四叉树中的特征点
  * @param[in] minX                  当前图层的图像的边界，坐标都是在“半径扩充图像”坐标系下的坐标
@@ -1170,9 +1171,10 @@ void ORBextractor::ComputeKeyPointsOctTree(
 		//并且调整其大小为欲提取出来的特征点个数（当然这里也是扩大了的，因为不可能所有的特征点都是在这一个图层中提取出来的）
         keypoints.reserve(nfeatures);
 
-        // 根据mnFeatuvector<KeyPoint> & keypoints = allKeypoints[level];resPerLevel,即该层的兴趣点数,对特征点进行剔除
-		//返回值是一个保存有特征点的vector容器，含有剔除后的保留下来的特征点
-        //得到的特征点的坐标，依旧是在当前图层下来讲的
+        // 根据mnFeatuvector<KeyPoint> & keypoints = allKeypoints[level];mnFeaturesPerLevel,即该层的兴趣点数,对特征点进行剔除
+        // 使用四叉树法将图像划分成很多个小格子，点越稠密的地方划分的越多。
+        // 当划分的格子达到或者刚刚超过设定的特征点个数时就不再划分。此时可能有的格子里面是有多个特征点的，我们只保留最好的那个特征点就好了。
+        // 此举相当于局部性地降采样
         keypoints = DistributeOctTree(vToDistributeKeys, 			//当前图层提取出来的特征点，也即是等待剔除的特征点
 																	//NOTICE 注意此时特征点所使用的坐标都是在“半径扩充图像”下的
 									  minBorderX, maxBorderX,		//当前图层图像的边界，而这里的坐标却都是在“边缘扩充图像”下的
