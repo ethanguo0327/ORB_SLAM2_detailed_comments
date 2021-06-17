@@ -717,7 +717,7 @@ void Frame::ComputeBoW()
 }
 
 /**
- * @brief 用内参对特征点去畸变，结果报存在mvKeysUn中
+ * @brief 用内参对特征点去畸变，结果保存在mvKeysUn中
  * 
  */
 void Frame::UndistortKeyPoints()
@@ -752,8 +752,8 @@ void Frame::UndistortKeyPoints()
 		mat,				//输出的校正后的特征点坐标覆盖原矩阵
 		mK,					//相机的内参数矩阵
 		mDistCoef,			//相机畸变参数矩阵
-		cv::Mat(),			//一个空矩阵，对应为函数原型中的R
-		mK); 				//新内参数矩阵，对应为函数原型中的P
+		cv::Mat(),			//一个空矩阵，对应为函数原型中的R ???
+		mK); 				//新内参数矩阵，对应为函数原型中的P ???
 	
 	//调整回只有一个通道，回归我们正常的处理方式
     mat=mat.reshape(1);
